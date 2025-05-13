@@ -6,12 +6,15 @@ import { StatCard } from "@/components/stat-card";
 import { FunnelStageComponent } from "@/components/funnel-stage";
 import { apiRequest } from "@/lib/queryClient";
 import { CreateClientDialog } from "@/components/create-client-dialog";
+import { ViewClientDialog } from "@/components/view-client-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Client, FunnelStage } from "@/lib/types";
 
 export default function SalesFunnel() {
   const { toast } = useToast();
   const [createClientOpen, setCreateClientOpen] = useState(false);
+  const [viewClientOpen, setViewClientOpen] = useState(false);
+  const [currentClient, setCurrentClient] = useState<Client | null>(null);
 
   // Fetch clients data
   const { data: clients = [], isLoading } = useQuery<Client[]>({

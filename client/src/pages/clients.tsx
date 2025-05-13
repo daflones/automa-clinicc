@@ -4,6 +4,7 @@ import { queryClient } from "@/lib/queryClient";
 import { Header } from "@/components/header";
 import { ClientTable } from "@/components/client-table";
 import { CreateClientDialog } from "@/components/create-client-dialog";
+import { ViewClientDialog } from "@/components/view-client-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Client } from "@/lib/types";
@@ -18,6 +19,7 @@ export default function Clients() {
   const { toast } = useToast();
   const [createClientOpen, setCreateClientOpen] = useState(false);
   const [editClientOpen, setEditClientOpen] = useState(false);
+  const [viewClientOpen, setViewClientOpen] = useState(false);
   const [currentClient, setCurrentClient] = useState<Client | null>(null);
   const [activeTab, setActiveTab] = useState("all");
 
@@ -76,10 +78,8 @@ export default function Clients() {
 
   // Handler functions for client actions
   const handleViewClient = (client: Client) => {
-    toast({
-      title: "Visualizar Cliente",
-      description: `Visualizando perfil de ${client.name}`,
-    });
+    setCurrentClient(client);
+    setViewClientOpen(true);
   };
 
   const handleEditClient = (client: Client) => {
@@ -214,6 +214,15 @@ export default function Clients() {
           }}
         />
       )}
+
+      {/* View Client Dialog */}
+      <ViewClientDialog
+        client={currentClient}
+        open={viewClientOpen}
+        onOpenChange={setViewClientOpen}
+        onContactWhatsApp={handleContactWhatsApp}
+        onEditClient={handleEditClient}
+      />
     </div>
   );
 }
