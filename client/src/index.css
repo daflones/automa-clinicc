@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 267 83% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 270 76% 95%;
+  --secondary-foreground: 240 10% 3.9%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 267 40% 75%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 267 83% 60%;
+  --radius: 0.5rem;
+
+  /* Chart colors */
+  --chart-1: 267 83% 60%;
+  --chart-2: 270 76% 95%;
+  --chart-3: 267 40% 75%;
+  --chart-4: 265 89% 70%;
+  --chart-5: 273 65% 50%;
+  
+  /* Sidebar colors */
+  --sidebar-background: 240 10% 4.9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 267 83% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 267 40% 75%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 240 5% 12%;
+  --sidebar-ring: 267 83% 60%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground));
+  border-radius: 20px;
+}
+
+/* Calendar styles */
+.calendar-day {
+  height: 40px;
+  width: 40px;
+}
+
+.calendar-day.current {
+  background-color: rgba(139, 92, 246, 0.2);
+  color: hsl(var(--primary));
+}
+
+.calendar-day.selected {
+  background-color: hsl(var(--primary));
+  color: white;
+}
+
+.time-slot {
+  transition: all 0.2s ease;
+}
+
+.time-slot:hover:not(.unavailable) {
+  background-color: rgba(139, 92, 246, 0.1);
+  border-color: hsl(var(--primary));
+}
+
+.time-slot.selected {
+  background-color: hsl(var(--primary));
+  color: white;
+  border-color: hsl(var(--primary));
+}
+
+.time-slot.unavailable {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: hsl(var(--muted-foreground));
+  cursor: not-allowed;
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Funnel stage transitions */
+.funnel-stage {
+  transition: all 0.3s ease;
+}
+
+.funnel-stage:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.kanban-column {
+  min-width: 280px;
+}
