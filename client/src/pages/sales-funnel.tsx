@@ -14,6 +14,7 @@ export default function SalesFunnel() {
   const { toast } = useToast();
   const [createClientOpen, setCreateClientOpen] = useState(false);
   const [viewClientOpen, setViewClientOpen] = useState(false);
+  const [editClientOpen, setEditClientOpen] = useState(false);
   const [currentClient, setCurrentClient] = useState<Client | null>(null);
 
   // Fetch clients data
@@ -39,6 +40,26 @@ export default function SalesFunnel() {
       });
     },
   });
+  
+  // Update client mutation
+  const updateClient = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      apiRequest("PATCH", `/api/clients/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Cliente atualizado",
+        description: "As informações do cliente foram atualizadas com sucesso!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: `Falha ao atualizar cliente: ${error.message}`,
+      });
+    },
+  });
 
   const stages: FunnelStage[] = [
     "NOVO_LEAD",
@@ -55,10 +76,8 @@ export default function SalesFunnel() {
 
   // Helper functions for client actions
   const handleClientClick = (client: Client) => {
-    toast({
-      title: "Detalhes do cliente",
-      description: `Visualizando detalhes de ${client.name}`,
-    });
+    setCurrentClient(client);
+    setViewClientOpen(true);
   };
 
   const handleContactEmail = (client: Client) => {
@@ -83,6 +102,11 @@ export default function SalesFunnel() {
       title: "WhatsApp",
       description: `Enviando mensagem de WhatsApp para ${client.name}`,
     });
+  };
+  
+  const handleEditClient = (client: Client) => {
+    setCurrentClient(client);
+    setEditClientOpen(true);
   };
 
   // Calculate stats for each stage
@@ -161,6 +185,28 @@ export default function SalesFunnel() {
         onSubmit={(data) => {
           createClient.mutate(data);
         }}
+      />
+      
+      {/* Edit Client Dialog */}
+      {currentClient && (
+        <CreateClientDialog
+          open={editClientOpen}
+          onOpenChange={setEditClientOpen}
+          initialData={currentClient}
+          isEditing={true}
+          onSubmit={(data) => {
+            updateClient.mutate({ id: currentClient.id, data });
+          }}
+        />
+      )}
+      
+      {/* View Client Dialog */}
+      <ViewClientDialog
+        client={currentClient}
+        open={viewClientOpen}
+        onOpenChange={setViewClientOpen}
+        onContactWhatsApp={handleContactWhatsApp}
+        onEditClient={handleEditClient}
       />
     </div>
   );
