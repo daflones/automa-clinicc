@@ -6,6 +6,8 @@ import {
   notifications, type Notification, type InsertNotification
 } from "@shared/schema";
 import { format, parseISO, isSameDay, startOfDay, endOfDay, subDays } from "date-fns";
+import { db } from "./db";
+import { eq, and, gte, lte, desc, not, asc } from "drizzle-orm";
 
 export interface IStorage {
   // Usuários
@@ -515,4 +517,334 @@ export class MemStorage implements IStorage {
   }
 }
 
+export class DatabaseStorage implements IStorage {
+  // Métodos para Usuários
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  // Métodos para Clientes
+  async getAllClients(): Promise<Client[]> {
+    return await db.select().from(clients);
+  }
+
+  async getClient(id: number): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client || undefined;
+  }
+
+  async createClient(insertClient: InsertClient): Promise<Client> {
+    // Formatar interesses como array se não for
+    const interests = Array.isArray(insertClient.interests)
+      ? insertClient.interests
+      : insertClient.interests ? [insertClient.interests] : [];
+    
+    const [client] = await db
+      .insert(clients)
+      .values({
+        ...insertClient,
+        interests,
+        lastInteraction: new Date()
+      })
+      .returning();
+    
+    return client;
+  }
+
+  async updateClient(id: number, clientData: Partial<InsertClient>): Promise<Client | undefined> {
+    const client = await this.getClient(id);
+    if (!client) return undefined;
+    
+    // Preservar interesses existentes se não foram fornecidos
+    const interests = clientData.interests
+      ? (Array.isArray(clientData.interests)
+          ? clientData.interests
+          : [clientData.interests])
+      : client.interests;
+    
+    const [updatedClient] = await db
+      .update(clients)
+      .set({
+        ...clientData,
+        interests,
+        lastInteraction: new Date()
+      })
+      .where(eq(clients.id, id))
+      .returning();
+    
+    return updatedClient || undefined;
+  }
+
+  async updateClientFunnelStage(id: number, funnelStage: string): Promise<Client | undefined> {
+    const [updatedClient] = await db
+      .update(clients)
+      .set({
+        funnelStage,
+        lastInteraction: new Date()
+      })
+      .where(eq(clients.id, id))
+      .returning();
+    
+    return updatedClient || undefined;
+  }
+
+  async getClientsByFunnelStage(): Promise<Record<string, number>> {
+    const result = {
+      NOVO_LEAD: 0,
+      PRIMEIRO_CONTATO: 0,
+      AVALIACAO_AGENDADA: 0,
+      PROCEDIMENTO_AGENDADO: 0,
+      POS_VENDA_RECORRENTE: 0
+    };
+    
+    const clientList = await db.select().from(clients);
+    
+    for (const client of clientList) {
+      if (client.funnelStage in result) {
+        result[client.funnelStage]++;
+      }
+    }
+    
+    return result;
+  }
+
+  // Métodos para Procedimentos
+  async getAllProcedures(): Promise<Procedure[]> {
+    return await db.select().from(procedures);
+  }
+
+  async getProcedure(id: number): Promise<Procedure | undefined> {
+    const [procedure] = await db.select().from(procedures).where(eq(procedures.id, id));
+    return procedure || undefined;
+  }
+
+  async createProcedure(insertProcedure: InsertProcedure): Promise<Procedure> {
+    const [procedure] = await db
+      .insert(procedures)
+      .values(insertProcedure)
+      .returning();
+    
+    return procedure;
+  }
+
+  // Métodos para Agendamentos
+  async getAllAppointments(): Promise<Appointment[]> {
+    const appointmentList = await db.select().from(appointments);
+    const clientList = await db.select().from(clients);
+    const procedureList = await db.select().from(procedures);
+    const userList = await db.select().from(users);
+    
+    // Criar mapas para pesquisa rápida
+    const clientMap = new Map(clientList.map(client => [client.id, client]));
+    const procedureMap = new Map(procedureList.map(procedure => [procedure.id, procedure]));
+    const userMap = new Map(userList.map(user => [user.id, user]));
+    
+    return appointmentList.map(appointment => {
+      const client = clientMap.get(appointment.clientId);
+      const procedure = procedureMap.get(appointment.procedureId);
+      const professional = userMap.get(appointment.professionalId);
+      
+      return {
+        ...appointment,
+        clientName: client?.name || "Cliente Desconhecido",
+        procedure: procedure?.name || "Consulta",
+        professionalName: professional?.name || "Profissional Desconhecido"
+      };
+    });
+  }
+
+  async getAppointment(id: number): Promise<Appointment | undefined> {
+    const [appointment] = await db.select().from(appointments).where(eq(appointments.id, id));
+    return appointment || undefined;
+  }
+
+  async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
+    const [appointment] = await db
+      .insert(appointments)
+      .values(insertAppointment)
+      .returning();
+    
+    // Atualizar estágio do cliente no funil se estiver em um estágio anterior
+    const client = await this.getClient(insertAppointment.clientId);
+    if (client) {
+      const currentStageOrder = {
+        NOVO_LEAD: 0,
+        PRIMEIRO_CONTATO: 1,
+        AVALIACAO_AGENDADA: 2,
+        PROCEDIMENTO_AGENDADO: 3,
+        POS_VENDA_RECORRENTE: 4
+      };
+      
+      // Se o cliente estiver em um estágio anterior ao agendamento de procedimento,
+      // atualizar para o estágio correspondente
+      if (currentStageOrder[client.funnelStage] < currentStageOrder.PROCEDIMENTO_AGENDADO) {
+        await this.updateClientFunnelStage(client.id, "PROCEDIMENTO_AGENDADO");
+      }
+    }
+    
+    return appointment;
+  }
+
+  async updateAppointmentStatus(id: number, status: string): Promise<Appointment | undefined> {
+    const [updatedAppointment] = await db
+      .update(appointments)
+      .set({ status })
+      .where(eq(appointments.id, id))
+      .returning();
+    
+    // Se o status for CONCLUIDO, atualizar o estágio do cliente para POS_VENDA_RECORRENTE
+    if (status === "CONCLUIDO" && updatedAppointment) {
+      const client = await this.getClient(updatedAppointment.clientId);
+      if (client) {
+        await this.updateClientFunnelStage(client.id, "POS_VENDA_RECORRENTE");
+      }
+    }
+    
+    return updatedAppointment || undefined;
+  }
+
+  async isTimeSlotAvailable(date: string, time: string, professionalId: number): Promise<boolean> {
+    const existingAppointments = await db
+      .select()
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.date, date),
+          eq(appointments.time, time),
+          eq(appointments.professionalId, professionalId),
+          not(eq(appointments.status, "CANCELADO"))
+        )
+      );
+    
+    return existingAppointments.length === 0;
+  }
+
+  async getTodayAppointments(): Promise<Appointment[]> {
+    const today = format(new Date(), "yyyy-MM-dd");
+    
+    const appointmentList = await db
+      .select()
+      .from(appointments)
+      .where(eq(appointments.date, today));
+    
+    const clientList = await db.select().from(clients);
+    const procedureList = await db.select().from(procedures);
+    const userList = await db.select().from(users);
+    
+    // Criar mapas para pesquisa rápida
+    const clientMap = new Map(clientList.map(client => [client.id, client]));
+    const procedureMap = new Map(procedureList.map(procedure => [procedure.id, procedure]));
+    const userMap = new Map(userList.map(user => [user.id, user]));
+    
+    return appointmentList.map(appointment => {
+      const client = clientMap.get(appointment.clientId);
+      const procedure = procedureMap.get(appointment.procedureId);
+      const professional = userMap.get(appointment.professionalId);
+      
+      return {
+        ...appointment,
+        clientName: client?.name || "Cliente Desconhecido",
+        procedure: procedure?.name || "Consulta",
+        professionalName: professional?.name || "Profissional Desconhecido"
+      };
+    });
+  }
+
+  async getLastWeekAppointments(): Promise<Appointment[]> {
+    const today = new Date();
+    const lastWeek = subDays(today, 7);
+    const todayStr = format(today, "yyyy-MM-dd");
+    const lastWeekStr = format(lastWeek, "yyyy-MM-dd");
+    
+    const appointmentList = await db
+      .select()
+      .from(appointments)
+      .where(
+        and(
+          gte(appointments.date, lastWeekStr),
+          lte(appointments.date, todayStr)
+        )
+      );
+    
+    const clientList = await db.select().from(clients);
+    const procedureList = await db.select().from(procedures);
+    const userList = await db.select().from(users);
+    
+    // Criar mapas para pesquisa rápida
+    const clientMap = new Map(clientList.map(client => [client.id, client]));
+    const procedureMap = new Map(procedureList.map(procedure => [procedure.id, procedure]));
+    const userMap = new Map(userList.map(user => [user.id, user]));
+    
+    return appointmentList.map(appointment => {
+      const client = clientMap.get(appointment.clientId);
+      const procedure = procedureMap.get(appointment.procedureId);
+      const professional = userMap.get(appointment.professionalId);
+      
+      return {
+        ...appointment,
+        clientName: client?.name || "Cliente Desconhecido",
+        procedure: procedure?.name || "Consulta",
+        professionalName: professional?.name || "Profissional Desconhecido"
+      };
+    });
+  }
+
+  // Métodos para Notificações
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values({
+        ...insertNotification,
+        read: false
+      })
+      .returning();
+    
+    return notification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const [updatedNotification] = await db
+      .update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    return updatedNotification || undefined;
+  }
+
+  async getRecentNotifications(): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .orderBy(desc(notifications.createdAt))
+      .limit(10);
+  }
+}
+
+// Usando armazenamento em memória por enquanto
+// Descomentar a linha abaixo quando o banco de dados estiver disponível
+// export const storage = new DatabaseStorage();
 export const storage = new MemStorage();
