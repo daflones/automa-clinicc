@@ -204,15 +204,14 @@ export default function Dashboard() {
 
       {/* Charts section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="col-span-1 lg:col-span-2">
-          <ChartPlaceholder
-            title="Consultas Agendadas"
-            chartType="bar"
-            data={barChartData}
-            onPeriodChange={setChartPeriod}
-            height={300}
-          />
-        </div>
+        <ChartPlaceholder
+          title="Consultas Agendadas"
+          chartType="bar"
+          data={barChartData}
+          onPeriodChange={setChartPeriod}
+          height={300}
+          className="col-span-1 lg:col-span-2"
+        />
         <ChartPlaceholder
           title="Conversão de Leads"
           chartType="funnel"

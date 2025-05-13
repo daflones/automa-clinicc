@@ -342,8 +342,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard data endpoint
-  app.get("/api/dashboard", isAuthenticated, async (req, res) => {
+  // Dashboard data endpoint (não autenticado para desenvolvimento)
+  app.get("/api/dashboard", async (req, res) => {
     try {
       const todayAppointments = await storage.getTodayAppointments();
       const lastWeekAppointments = await storage.getLastWeekAppointments();

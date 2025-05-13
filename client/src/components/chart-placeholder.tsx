@@ -42,6 +42,7 @@ export function ChartPlaceholder({
   data,
   height = 300,
   onPeriodChange,
+  className,
 }: ChartPlaceholderProps) {
   const handlePeriodChange = (value: string) => {
     if (onPeriodChange) {
@@ -144,7 +145,7 @@ export function ChartPlaceholder({
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className={`bg-card border-border ${className || ''}`}>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-lg font-medium text-white">{title}</CardTitle>
         <div className="mt-2 sm:mt-0">
