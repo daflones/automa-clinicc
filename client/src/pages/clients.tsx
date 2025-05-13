@@ -140,19 +140,48 @@ export default function Clients() {
               Leads Inativos
             </TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="all" className="mt-0 p-0">
+            <ClientTable
+              clients={filteredClients}
+              onViewClient={handleViewClient}
+              onEditClient={handleEditClient}
+              onContactWhatsApp={handleContactWhatsApp}
+              onSchedule={handleSchedule}
+            />
+          </TabsContent>
+          
+          <TabsContent value="leads" className="mt-0 p-0">
+            <ClientTable
+              clients={filteredClients}
+              onViewClient={handleViewClient}
+              onEditClient={handleEditClient}
+              onContactWhatsApp={handleContactWhatsApp}
+              onSchedule={handleSchedule}
+            />
+          </TabsContent>
+          
+          <TabsContent value="recurring" className="mt-0 p-0">
+            <ClientTable
+              clients={filteredClients}
+              onViewClient={handleViewClient}
+              onEditClient={handleEditClient}
+              onContactWhatsApp={handleContactWhatsApp}
+              onSchedule={handleSchedule}
+            />
+          </TabsContent>
+          
+          <TabsContent value="inactive" className="mt-0 p-0">
+            <ClientTable
+              clients={filteredClients}
+              onViewClient={handleViewClient}
+              onEditClient={handleEditClient}
+              onContactWhatsApp={handleContactWhatsApp}
+              onSchedule={handleSchedule}
+            />
+          </TabsContent>
         </Tabs>
       </div>
-
-      {/* Client Table */}
-      <TabsContent value={activeTab} className="mt-0 p-0">
-        <ClientTable
-          clients={filteredClients}
-          onViewClient={handleViewClient}
-          onEditClient={handleEditClient}
-          onContactWhatsApp={handleContactWhatsApp}
-          onSchedule={handleSchedule}
-        />
-      </TabsContent>
 
       {/* Create Client Dialog */}
       <CreateClientDialog
