@@ -5,6 +5,8 @@ import Dashboard from "@/pages/dashboard";
 import SalesFunnel from "@/pages/sales-funnel";
 import Clients from "@/pages/clients";
 import Calendar from "@/pages/calendar";
+import Procedures from "@/pages/procedures";
+import Reports from "@/pages/reports";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "./providers/auth-provider";
@@ -49,6 +51,10 @@ function App() {
                 <Route path="/funil-vendas" component={SalesFunnel} />
                 <Route path="/clientes" component={Clients} />
                 <Route path="/agenda" component={Calendar} />
+                <Route path="/procedimentos" component={Procedures} />
+                <Route path="/relatorios" component={Reports} />
+                <Route path="/configuracoes" component={NotFound} />
+                <Route path="/ajuda" component={NotFound} />
                 <Route component={NotFound} />
               </Switch>
             </main>
