@@ -66,6 +66,16 @@ export default function SalesFunnel() {
   };
 
   const handleContactWhatsApp = (client: Client) => {
+    // Formatar o número de telefone (remover caracteres não numéricos)
+    const phoneNumber = client.phone.replace(/\D/g, '');
+    
+    // Adicionar o código do país se não estiver presente (Brasil)
+    const formattedNumber = phoneNumber.startsWith('55') ? phoneNumber : `55${phoneNumber}`;
+    
+    // Criar URL do WhatsApp e abrir em nova janela
+    const whatsappUrl = `https://wa.me/${formattedNumber}?text=Olá ${encodeURIComponent(client.name)}, tudo bem?`;
+    window.open(whatsappUrl, '_blank');
+    
     toast({
       title: "WhatsApp",
       description: `Enviando mensagem de WhatsApp para ${client.name}`,
