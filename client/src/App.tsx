@@ -7,6 +7,7 @@ import Clients from "@/pages/clients";
 import Calendar from "@/pages/calendar";
 import Procedures from "@/pages/procedures";
 import Reports from "@/pages/reports";
+import Configuracoes from "@/pages/configuracoes";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "./providers/auth-provider";
@@ -53,7 +54,7 @@ function App() {
                 <Route path="/agenda" component={Calendar} />
                 <Route path="/procedimentos" component={Procedures} />
                 <Route path="/relatorios" component={Reports} />
-                <Route path="/configuracoes" component={NotFound} />
+                <Route path="/configuracoes" component={Configuracoes} />
                 <Route path="/ajuda" component={NotFound} />
                 <Route component={NotFound} />
               </Switch>
